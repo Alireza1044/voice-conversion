@@ -1,4 +1,3 @@
-# Voice Conversion
+# Signals and Systems Course Project
 
-Signals and Systems course project
 Voice Conversion
