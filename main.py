@@ -1,8 +1,15 @@
+import os
+import wave
+import time
+import pyaudio
 from scipy.io import wavfile
+import matplotlib.pyplot as plt
 import simpleaudio as sa
+from playsound import playsound
 import sounddevice as sd
 import soundfile as sf
 import numpy as np
+import librosa
 import Recorder
 
 
@@ -37,7 +44,14 @@ def stretch(sound_array, f, window_size, h):
 
     result = ((2 ** (16 - 4)) * result / result.max())  # normalize (16bit)
 
-    return result.astype('int16')
+    return result.astype('float32')
+
+
+def pitch(signal, rate, n):
+    # w = 2 * np.pi * 700 / rate
+    # out = signal * np.cos(w * np.arange(0, len(signal)))
+    # return out
+    return librosa.effects.pitch_shift(signal, rate, n, res_type='kaiser_best')
 
 
 def pitchshift(snd_array, n, window_size=2 ** 13, h=2 ** 11):
@@ -47,23 +61,42 @@ def pitchshift(snd_array, n, window_size=2 ** 13, h=2 ** 11):
     return speedx(stretched[window_size:], factor)
 
 
+SHORT_NORMALIZE = (1.0 / 32768.0)
+chunk = 128
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 44100
+swidth = 2
+f_name_directory = r'records'
+TIMEOUT_LENGTH = 0.1
+
 if __name__ == '__main__':
-    a = Recorder.Recorder()
-    print('Listening beginning')
-    shifted_filename = 'records/result.wav'
-    filename = "records/voice.wav"
+    import pyaudio
+    import numpy as np
+
+    RATE = 44100
+    CHUNK = 128
+
+    p = pyaudio.PyAudio()
+    print("Preparing...")
+    player = p.open(format=pyaudio.paFloat32, channels=1, rate=RATE, output=True,
+                    frames_per_buffer=CHUNK)
+    stream = p.open(format=pyaudio.paFloat32, channels=1, rate=RATE, input=True, frames_per_buffer=CHUNK)
+    rate, signal = wavfile.read("records/voice.wav")
+    print("Recorder activated...")
     while True:
-        if a.listen():
-            print('Playing recorded voice...')
-            rate, signal = wavfile.read(filename)
-            sd.play(signal, rate)
-            status = sd.wait()
-            print('Processing...')
-            new_signal = pitchshift(signal, 3)
-            wavfile.write(shifted_filename, rate, new_signal)
-            print('Done, Now playing...')
-            data, fs = sf.read(shifted_filename, dtype='float32')
-            sd.play(data, fs)
-            status = sd.wait()
-            print('Returning to listening')
+        try:
+            signal = stream.read(CHUNK, exception_on_overflow=False)
+            ch = np.fromstring(signal, dtype=np.float32)
+            new_signal = pitch(ch, RATE, -3)
+            player.write(new_signal, CHUNK,
+                         exception_on_underflow=False)
+        except KeyboardInterrupt:
+            print("Keyboard interrupt detected.")
+            print("exiting...")
+            break
+
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
     pass
