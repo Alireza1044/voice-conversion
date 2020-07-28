@@ -2,7 +2,7 @@ import pyaudio
 import numpy as np
 import librosa
 import scipy
-from pyo import *
+import time
 
 
 def pitch_shift(signal, n):
@@ -17,16 +17,6 @@ def pitch_shift(signal, n):
     return signal_resample
 
 
-SHORT_NORMALIZE = (1.0 / 32768.0)
-chunk = 128
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-RATE = 44100
-swidth = 2
-f_name_directory = r'records'
-TIMEOUT_LENGTH = 0.1
-
-
 def callback(in_data, frame_count, time_info, flag):
     ch = np.fromstring(in_data, dtype=np.float32)
     new_signal = pitch_shift(ch, shift_amount)
@@ -38,6 +28,7 @@ if __name__ == '__main__':
 
     RATE = 44100
     CHUNK = int(4096 * 3)
+    CHANNELS = 1
     shift_amount = 5
 
     p = pyaudio.PyAudio()
