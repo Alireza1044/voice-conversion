@@ -1,7 +1,4 @@
 librosa==0.7.2
-numba==0.48.0
 PyAudio==0.2.11
-PyGObject==3.36.1
-pyo==1.0.1
 numpy==1.18.1
-WxPython==4.1.0
+scipy
