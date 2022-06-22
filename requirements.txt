@@ -1,4 +1,4 @@
 librosa==0.7.2
 PyAudio==0.2.11
-numpy==1.18.1
+numpy==1.22.0
 scipy
